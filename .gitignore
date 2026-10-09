@@ -1,0 +1,5 @@
+nbproject/
+*.cbp
+*.depend
+main
+*.o
