@@ -81,6 +81,35 @@ void btree::insereRecursivo(int chave, int valor, int pagina, int nivel) {
      return;
     }
 
+    if( nivel == cabecalhoArvore.alturaArvore){
+        paginaB *pgFolha = lePagina(pagina);
+        if(pgFolha->numeroElementos < ORDEM - 1){
+            
+         int i= pgFolha->numeroElementos - 1;
+
+         for(;i<=0 && pgFolha-> chaves[i]> chave;i++){
+
+            pgFolha->chaves[i + 1] = pgFolha->chaves[i];
+            pgFolha->valores[i + 1] = pgFolha->valores[i];
+         }
+
+         pgFolha->chaves[i + 1] = chave;
+         pgFolha->valores[i + 1] = valor;
+         pgFolha->numeroElementos++;
+
+         cabecalhoArvore.numeroElementos++;
+         salvaCabecalho();
+
+         salvaPagina(pagina, pgFolha);
+         delete pgFolha;
+         return;
+
+
+        }
+    }
+
+    
+
     // chamada recursiva incrementando nível até chegar na folha (quando nivel == cabecalho.alturaArvore)
 
     // na volta da recursão, situações:
