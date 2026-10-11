@@ -83,11 +83,11 @@ void btree::insereRecursivo(int chave, int valor, int pagina, int nivel) {
 
     if( nivel == cabecalhoArvore.alturaArvore){
         paginaB *pgFolha = lePagina(pagina);
-        if(pgFolha->numeroElementos < ORDEM - 1){
+        if(pgFolha->numeroElementos < ORDEM - 1){//se a pagina nao ta cheia
             
          int i= pgFolha->numeroElementos - 1;
 
-         for(;i<=0 && pgFolha-> chaves[i]> chave;i++){
+         for(;i >= 0 && pgFolha-> chaves[i]> chave;i--){//vai percorrer do final ate o inicio
 
             pgFolha->chaves[i + 1] = pgFolha->chaves[i];
             pgFolha->valores[i + 1] = pgFolha->valores[i];
@@ -105,6 +105,47 @@ void btree::insereRecursivo(int chave, int valor, int pagina, int nivel) {
          return;
 
 
+        } else { //pagina cheia
+            int inserirChave[ORDEM], inserirValor[ORDEM]; //temporarios apenas para a insercao
+            for (int i = 0; i < ORDEM - 1; i++) {
+                inserirChave[i] = pgFolha->chaves[i];
+                inserirValor[i] = pgFolha->valores[i];
+            }
+
+            int x = ORDEM - 2;
+            while (x >= 0 && inserirChave[x] > chave) {
+                inserirChave[x+1] = inserirChave[x];
+                inserirValor[x+1] = inserirValor[x];
+                x--;
+            }
+
+            inserirChave[x + 1] = chave;
+            inserirValor[x + 1] = valor;
+            //esses vetores tem que ser divididos entre as duas paginas e ja estao ordenados e com a insercao feita
+
+            int meio = ORDEM / 2;
+            pgFolha->numeroElementos = meio;
+            for (int i = 0; i < ORDEM / 2; i++) {
+                pgFolha->chaves[i] = inserirChave[i];
+                pgFolha->valores[i] = inserirValor[i];
+            }
+
+            int idNovo;
+            paginaB *nova = novaPagina(&idNovo);
+            
+            for (int i = meio; i < ORDEM; i++) {
+                nova->chaves[i - meio] = inserirChave[i];
+                nova->valores[i - meio] = inserirValor[i];
+                nova->numeroElementos++;
+            }
+
+            cabecalhoArvore.numeroElementos++;
+            salvaCabecalho();
+
+            salvaPagina(pgFolha->numeroPagina, pgFolha);
+            salvaPagina(nova->numeroPagina, nova);   
+            delete(pgFolha);
+            delete(nova);                    
         }
     }
 
