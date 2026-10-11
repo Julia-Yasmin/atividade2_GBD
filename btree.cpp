@@ -146,7 +146,42 @@ void btree::removeChave(int chave) {
 
 int btree::buscaChave(int chave) {
     // se encontrar chave, retornar valor, caso contrário, retornar -1
-    return -1;
+
+    // arvore vazia
+    if (cabecalhoArvore.paginaRaiz == -1) {
+        return -1;
+    }
+
+    int idPagina = cabecalhoArvore.paginaRaiz;
+    int nivel = 1;
+
+    // desce pelas paginas internas ate chegar no nivel da folha
+    while (nivel < cabecalhoArvore.alturaArvore) {
+        paginaB *pg = lePagina(idPagina);
+
+        int i = 0;
+        while (i < pg->numeroElementos && chave >= pg->chaves[i]) {
+            i++;
+        }
+
+        idPagina = pg->valores[i];   // proxima pagina
+        delete pg;
+        nivel++;
+    }
+
+    // agora idPagina eh uma folha: procura a chave dentro dela
+    paginaB *folha = lePagina(idPagina);
+    int resultado = -1;
+
+    for (int i = 0; i < folha->numeroElementos; i++) {
+        if (folha->chaves[i] == chave) {
+            resultado = folha->valores[i];
+            break;
+        }
+    }
+
+    delete folha;
+    return resultado;
 }
 
 #endif	/* _BTREE_CPP */
