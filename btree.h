@@ -184,7 +184,7 @@ private:
     /*
      * Insere par na árvore
      */
-    void insereRecursivo(int chave, int valor, int pagina, int nivel);
-};
+    bool insereRecursivo(int chave, int valor, int idPagina, int nivel, int &chavePromovida, int &idNovaPagina);
+    };
 
 #endif	/* _BTREE_H */

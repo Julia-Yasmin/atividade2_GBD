@@ -40,117 +40,213 @@ int btree::computarTaxaOcupacao() {
 
 void btree::insereChave(int chave, int valor) {
 
-    insereRecursivo(chave, valor, cabecalhoArvore.paginaRaiz, 1);
-}
-
-void btree::insereRecursivo(int chave, int valor, int pagina, int nivel) {
-
-    // verificar se raiz existe!
-    if (cabecalhoArvore.paginaRaiz == -1) {
+    if (cabecalhoArvore.paginaRaiz == -1) {//arvore vazia
         int idNovaRaiz;
         paginaB *pgRaiz = novaPagina(&idNovaRaiz);
 
-        pgRaiz->chaves[0] =chave;
-        pgRaiz->valores[0] =valor;
-        pgRaiz->numeroElementos=1;
-        
+        pgRaiz->chaves[0] = chave;
+        pgRaiz->valores[0] = valor;
+        pgRaiz->numeroElementos = 1;
         salvaPagina(idNovaRaiz, pgRaiz);
 
         cabecalhoArvore.paginaRaiz = idNovaRaiz;
-        cabecalhoArvore.numeroElementos =1;
-        cabecalhoArvore.alturaArvore =1;
+        cabecalhoArvore.numeroElementos = 1;
+        cabecalhoArvore.alturaArvore = 1;
         salvaCabecalho();
-        delete pgRaiz;
 
+        delete pgRaiz;
         return;
     }
 
-    if(nivel< cabecalhoArvore.alturaArvore){
+    int chavePromovida, idPagNova;
+    bool temSplit = insereRecursivo(chave, valor, cabecalhoArvore.paginaRaiz, 1, chavePromovida, idPagNova);
 
-     paginaB *pgAtual = lePagina(pagina);
-     int i;
+    if (temSplit){
+        int idNovaRaiz;
+        paginaB *novaRaiz = novaPagina(&idNovaRaiz);
 
-     for(; i< pgAtual->numeroElementos && chave>= pgAtual->chaves[i]; i++){
-     }
-        
-     int idProximaPagina = pgAtual->valores[i];
+        novaRaiz->chaves[0] = chavePromovida;
+        novaRaiz->valores[0] = cabecalhoArvore.paginaRaiz; 
+        novaRaiz->valores[1] = idPagNova;               
+        novaRaiz->numeroElementos = 1;
+        salvaPagina(idNovaRaiz, novaRaiz);
 
-     delete pgAtual; 
-     insereRecursivo(chave, valor, idProximaPagina, nivel +1);
-     
-     return;
+        cabecalhoArvore.paginaRaiz = idNovaRaiz;
+        cabecalhoArvore.alturaArvore++;
+        salvaCabecalho();
+
+        delete novaRaiz;
     }
 
-    if( nivel == cabecalhoArvore.alturaArvore){
-        paginaB *pgFolha = lePagina(pagina);
-        if(pgFolha->numeroElementos < ORDEM - 1){//se a pagina nao ta cheia
-            
-         int i= pgFolha->numeroElementos - 1;
+}
 
-         for(;i >= 0 && pgFolha-> chaves[i]> chave;i--){//vai percorrer do final ate o inicio
+bool btree::insereRecursivo(int chave, int valor, int idPagina, int nivel, int &chavePromovida, int &idNovaPagina) {
+    if (nivel == cabecalhoArvore.alturaArvore) {
+        pagina *pgFolha = lePagina(idPagina);
 
-            pgFolha->chaves[i + 1] = pgFolha->chaves[i];
-            pgFolha->valores[i + 1] = pgFolha->valores[i];
-         }
-
-         pgFolha->chaves[i + 1] = chave;
-         pgFolha->valores[i + 1] = valor;
-         pgFolha->numeroElementos++;
-
-         cabecalhoArvore.numeroElementos++;
-         salvaCabecalho();
-
-         salvaPagina(pagina, pgFolha);
-         delete pgFolha;
-         return;
-
-
-        } else { //pagina cheia
-            int inserirChave[ORDEM], inserirValor[ORDEM]; //temporarios apenas para a insercao
-            for (int i = 0; i < ORDEM - 1; i++) {
-                inserirChave[i] = pgFolha->chaves[i];
-                inserirValor[i] = pgFolha->valores[i];
+        // Folha não está cheia: inserção simples
+        if (pgFolha->numeroElementos < ORDEM - 1) {
+            int i = pgFolha->numeroElementos - 1;
+            while (i >= 0 && pgFolha->chaves[i] > chave) {
+                pgFolha->chaves[i + 1] = pgFolha->chaves[i];
+                pgFolha->valores[i + 1] = pgFolha->valores[i];
+                i--;
             }
+            pgFolha->chaves[i + 1] = chave;
+            pgFolha->valores[i + 1] = valor;
+            pgFolha->numeroElementos++;
 
-            int x = ORDEM - 2;
-            while (x >= 0 && inserirChave[x] > chave) {
-                inserirChave[x+1] = inserirChave[x];
-                inserirValor[x+1] = inserirValor[x];
-                x--;
-            }
-
-            inserirChave[x + 1] = chave;
-            inserirValor[x + 1] = valor;
-            //esses vetores tem que ser divididos entre as duas paginas e ja estao ordenados e com a insercao feita
-
-            int meio = ORDEM / 2;
-            pgFolha->numeroElementos = meio;
-            for (int i = 0; i < ORDEM / 2; i++) {
-                pgFolha->chaves[i] = inserirChave[i];
-                pgFolha->valores[i] = inserirValor[i];
-            }
-
-            int idNovo;
-            paginaB *nova = novaPagina(&idNovo);
-            
-            for (int i = meio; i < ORDEM; i++) {
-                nova->chaves[i - meio] = inserirChave[i];
-                nova->valores[i - meio] = inserirValor[i];
-                nova->numeroElementos++;
-            }
+            salvaPagina(idPagina, pgFolha);
+            delete pgFolha;
 
             cabecalhoArvore.numeroElementos++;
             salvaCabecalho();
-
-            salvaPagina(pgFolha->numeroPagina, pgFolha);
-            salvaPagina(nova->numeroPagina, nova);   
-            delete(pgFolha);
-            delete(nova);                    
+            return false;
         }
+
+        // Folha cheia: dividir
+        int tempChaves[ORDEM];
+        int tempValores[ORDEM];
+
+        for (int i = 0; i < ORDEM - 1; i++) {
+            tempChaves[i] = pgFolha->chaves[i];
+            tempValores[i] = pgFolha->valores[i];
+        }
+
+        int x = ORDEM - 2;
+        while (x >= 0 && tempChaves[x] > chave) {
+            tempChaves[x + 1] = tempChaves[x];
+            tempValores[x + 1] = tempValores[x];
+            x--;
+        }
+        tempChaves[x + 1] = chave;
+        tempValores[x + 1] = valor;
+
+        int meio = ORDEM / 2;
+
+        // Atualiza a página esquerda (a própria folha)
+        pgFolha->numeroElementos = meio;
+        for (int i = 0; i < meio; i++) {
+            pgFolha->chaves[i] = tempChaves[i];
+            pgFolha->valores[i] = tempValores[i];
+        }
+
+        // Cria a página direita
+        int idNovo;
+        pagina *nova = novaPagina(&idNovo);
+        nova->numeroElementos = ORDEM - meio;
+        for (int i = meio; i < ORDEM; i++) {
+            nova->chaves[i - meio] = tempChaves[i];
+            nova->valores[i - meio] = tempValores[i];
+        }
+
+        salvaPagina(pgFolha->numeroPagina, pgFolha);
+        salvaPagina(nova->numeroPagina, nova);
+
+        delete pgFolha;
+        delete nova;
+
+        cabecalhoArvore.numeroElementos++;
+        salvaCabecalho();
+
+        chavePromovida = tempChaves[meio];
+        idNovaPagina = idNovo;
+        return true;
     }
 
-    
+    // Nó interno: desce pela árvore
+    pagina *pgAtual = lePagina(idPagina);
+    int i = 0;
+    while (i < pgAtual->numeroElementos && chave >= pgAtual->chaves[i]) {
+        i++;
+    }
+    int idFilho = pgAtual->valores[i];
+    delete pgAtual;
 
+    int chavePromovidaFilho, idNovoFilho;
+    bool split = insereRecursivo(chave, valor, idFilho, nivel + 1,
+                                 chavePromovidaFilho, idNovoFilho);
+
+    if (!split) {
+        return false;
+    }
+
+    // O filho dividiu: inserir a chave promovida e o novo filho no nó atual
+    pagina *pg = lePagina(idPagina);
+
+    // Se o nó interno tem espaço
+    if (pg->numeroElementos < ORDEM - 1) {
+        // Desloca chaves para a direita
+        for (int j = pg->numeroElementos; j > i; j--) {
+            pg->chaves[j] = pg->chaves[j - 1];
+        }
+        // Desloca filhos para a direita
+        for (int j = pg->numeroElementos; j > i; j--) {
+            pg->valores[j + 1] = pg->valores[j];
+        }
+
+        pg->chaves[i] = chavePromovidaFilho;
+        pg->valores[i + 1] = idNovoFilho;
+        pg->numeroElementos++;
+
+        salvaPagina(idPagina, pg);
+        delete pg;
+        return false;
+    }
+
+    // Nó interno cheio: dividir
+    int tempChaves[ORDEM];
+    int tempValores[ORDEM + 1];
+
+    // Copia chaves e insere a promovida
+    for (int j = 0; j < i; j++) {
+        tempChaves[j] = pg->chaves[j];
+    }
+    tempChaves[i] = chavePromovidaFilho;
+    for (int j = i; j < pg->numeroElementos; j++) {
+        tempChaves[j + 1] = pg->chaves[j];
+    }
+
+    // Copia filhos e insere o novo filho
+    for (int j = 0; j <= i; j++) {
+        tempValores[j] = pg->valores[j];
+    }
+    tempValores[i + 1] = idNovoFilho;
+    for (int j = i + 1; j <= pg->numeroElementos; j++) {
+        tempValores[j + 1] = pg->valores[j];
+    }
+
+    int meio = ORDEM / 2;
+
+    // Página esquerda
+    pg->numeroElementos = meio;
+    for (int j = 0; j < meio; j++) {
+        pg->chaves[j] = tempChaves[j];
+    }
+    for (int j = 0; j <= meio; j++) {
+        pg->valores[j] = tempValores[j];
+    }
+
+    // Página direita
+    int idNovo;
+    pagina *nova = novaPagina(&idNovo);
+    nova->numeroElementos = ORDEM - meio - 1;
+    for (int j = meio + 1; j < ORDEM; j++) {
+        nova->chaves[j - (meio + 1)] = tempChaves[j];
+    }
+    for (int j = meio + 1; j <= ORDEM; j++) {
+        nova->valores[j - (meio + 1)] = tempValores[j];
+    }
+
+    salvaPagina(pg->numeroPagina, pg);
+    salvaPagina(nova->numeroPagina, nova);
+
+    delete pg;
+    delete nova;
+
+    chavePromovida = tempChaves[meio];
+    idNovaPagina = idNovo;
+    return true;
     // chamada recursiva incrementando nível até chegar na folha (quando nivel == cabecalho.alturaArvore)
 
     // na volta da recursão, situações:
@@ -171,8 +267,6 @@ void btree::insereRecursivo(int chave, int valor, int pagina, int nivel) {
     // ler pagina raiz: pagina *pg = lePagina(cabecalhoArvore.paginaRaiz);
 
     // se inserir, atualizar cabecalho
-    cabecalhoArvore.numeroElementos++;
-    salvaCabecalho();
 }
 
 void btree::removeChave(int chave) {
