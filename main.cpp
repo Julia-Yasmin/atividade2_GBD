@@ -1,5 +1,5 @@
 /*
- * ALUNO: COLOQUE SEU NOME AQUI
+ * ALUNO: JÃºlia Yasmin Silva GuimarÃ£es, Davi Paiva Sendin, Leonardo Pereira da Silva
  * File:   main.cpp
  */
 
@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     // iniciar a semente aleatoria
     srand ( time(NULL) );
 
-    remove("arvoreb.dat"); // durante o desenvolvimento a cada execução o arquivo é apagado
+    remove("arvoreb.dat"); // durante o desenvolvimento a cada execuï¿½ï¿½o o arquivo ï¿½ apagado
 
     // criar arvore b
     btree *arvore = new btree();
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     // inserir numeros aleatorios na arvore
     for (int i = 0; i < 10000; i++) {
         int chave = rand() % 1000000 + 1;
-		int valor = chave + 1; // representa a localização de um registro no arquivo de dados
+		int valor = chave + 1; // representa a localizaï¿½ï¿½o de um registro no arquivo de dados
         arvore->insereChave(chave,valor);
         if (i % 1000 == 0)
             printf("%d, ",chave);
